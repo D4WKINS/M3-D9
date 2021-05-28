@@ -81,12 +81,11 @@
    
     <script>
        const url = "https://striveschool-api.herokuapp.com/api/product/";
-
-
-      window.onload = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
+       const urlParams = new URLSearchParams(window.location.search);
       console.log(urlParams)
       let productId = urlParams.get("id");
+
+      window.onload = async () => {
 
 
       try {
@@ -121,8 +120,9 @@
           console.log(error);
         }
       };
-
+      
       const handleEdit = () => {
+        console.log(productId)
         window.location.assign("./backoffice.html?productId=" + productId); // pushing the user to another page + the eventId as query string.
         // "eventId" is the key for the params this time, remember it was just "id" in the link to come here? we specified it in the link from the homepage
       };

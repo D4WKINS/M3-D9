@@ -78,7 +78,7 @@
     <div class="container-fluid my-5 shadow p-0" id="product-form" style="max-width:500px">
       <div class="jumbotron " style="background-color:#febd69;">
         <div class="display-4">Shopizon</div>
-        <div class="lead" id="operation"><span id="subtitle"></span></div>
+        <div class="lead" id="subtitle"></div>
       </div>
       <form>
         <div class="form-row px-3" >
@@ -105,17 +105,21 @@
         </div>
       </div>
         <button type="submit" id="submit" onclick="handleSubmit(event)" class="btn btn-primary">Submit</button>
+        <button id="delete-btn" type="button" class="btn btn-danger d-none" onclick="handleDelete()"
+              >Delete</button>
       </form>
     </div>
 
 
     <script>
-
+      const urlParams = new URLSearchParams(window.location.search); // ?eventId=1289391872398123
+      let productId = urlParams.get("productId");
+      
       const endpoint = productId
         ? "https://striveschool-api.herokuapp.com/api/product/" + productId
         : "https://striveschool-api.herokuapp.com/api/product/";
 
-      const method = productId? "PUT" : "POST";
+      const method = productId ? "PUT" : "POST";
 
 window.onload = async () =>{
   if (productId) {
@@ -123,13 +127,19 @@ window.onload = async () =>{
           document.getElementById("subtitle").innerText = " — Edit Event";
 
           //3) if you have an id go on and fetch the event details
-          const response = await fetch(endpoint); // "endpoint" is a variable that will contain the correct endpoint for any case
-          const eventDetails = await response.json();
+          const response = await fetch(endpoint,{
+          method,
+            headers:{
+                'Content-Type': 'application/json',
+                "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGFlNGI5OGNlYWY0ODAwMTVjOTE4ZDciLCJpYXQiOjE2MjIwMzY2MTMsImV4cCI6MTYyMzI0NjIxM30.UTCBinfwZqSkRA2yjhaVG7VYcl5qIqBRvWnTtErbg80"
+              }}); // "endpoint" is a variable that will contain the correct endpoint for any case
+
+          const productDetails = await response.json();
 
           document.getElementById("delete-btn").classList.remove("d-none"); // this will display the delete button if you are in "edit mode"
 
           // 4) populate the fields with the values from the event you chose to modify
-          populateFields(eventDetails); // this function will prefill the form inputs with the eventDetails object that you retrieved from the fetch
+          populateFields(productDetails); // this function will prefill the form inputs with the eventDetails object that you retrieved from the fetch
 
           // N.B. The fetch here was necessary to grab the EXACT values of the event object for the Event you are trying to modify, so that you can then prefill the form fields with them.
         } else {
@@ -139,13 +149,22 @@ window.onload = async () =>{
                 // 'Content-Type': 'application/json',
                 // "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGFlNGI5OGNlYWY0ODAwMTVjOTE4ZDciLCJpYXQiOjE2MjIwMzY2MTMsImV4cCI6MTYyMzI0NjIxM30.UTCBinfwZqSkRA2yjhaVG7VYcl5qIqBRvWnTtErbg80"
 
+                const populateFields = (obj = objModel) => {
+        // using the object model as default parameter, in case of calling populateFields() without any parameter, to erase the fields
+        document.getElementById("product-name").value = obj.name; // in case of empty parameter obj will become = objModel
+        document.getElementById("product-description").value = obj.description;
+        document.getElementById("product-brand").value = obj.brand;
+        document.getElementById("product-img").value = obj.imageUrl;
+        document.getElementById("product-price").value = obj.price;
+     
+      };
 
 const handleSubmit = async (e) =>{
     e.preventDefault();
+    // isLoading(true);
 
-    
           let url = document.getElementById("product-img").value 
-        const newProduct = {
+        const myProduct = {
             name:document.getElementById("product-name").value,
             description: document.getElementById("product-description").value,
             brand: document.getElementById("product-brand").value,
@@ -153,53 +172,91 @@ const handleSubmit = async (e) =>{
             price: document.getElementById("product-price").value
           };
 
-          const populateFields = (obj = objModel) => {
-        // using the object model as default parameter, in case of calling populateFields() without any parameter, to erase the fields
-        document.getElementById("name").value = obj.name; // in case of empty parameter obj will become = objModel
-        document.getElementById("description").value = obj.description;
-        document.getElementById("price").value = obj.price;
-        document.getElementById("time").value = obj.time.split(".")[0];
+try {
+          const response = await fetch(endpoint, {
+            // method: eventId ? "PUT" : "POST", // same as below
+            method,
+            body: JSON.stringify(myProduct),
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGFlNGI5OGNlYWY0ODAwMTVjOTE4ZDciLCJpYXQiOjE2MjIwMzY2MTMsImV4cCI6MTYyMzI0NjIxM30.UTCBinfwZqSkRA2yjhaVG7VYcl5qIqBRvWnTtErbg80"
+            },
+          });
+
+          if (response.ok) {
+            if (!productId) {
+ 
+              populateFields(); // we can call the function with no parameters to erase the fields becase we put a default parameter in the function DEFINITION
+            }
+            const data = await response.json(); //getting the data to display the id of the newly created/edited event in the alert below
+
+            showAlert(
+              "success", 
+              `Appointment ${
+               
+                !productId ? "created sccessfully" : ""
+              } with an id of ${data._id} ${
+                productId ? "edited successfully" : ""
+              }`
+            );
+             
+          } else {
+            if (response.status === 400) {
+              throw new Error("Bad request with status 400");
+            } else if (response.status === 401) {
+              throw new Error("Anauthorized with status 401");
+            } else if (response.status === 404) {
+              throw new Error("Not found with status 404");
+            } 
+          }
+        } catch (err) {
+          alert(err.message);
+        } finally {
+          // isLoading(false); 
+        }
+
+        };
+
+        const showAlert = (type, msg) => {
+        // custom function to display a nicer bootstrap alert in the page when you decide to call it
+        const container = document.getElementById("alert-box"); //grabs the div to put the alert into
+
+        container.innerHTML = ` 
+        <div class="alert alert-${type}" role="alert">
+         ${msg}
+        </div>
+        `;
+
+        setTimeout(() => {
+          // erases the alert after 4 seconds
+          container.innerHTML = "";
+        }, 4000);
       };
 
-
-        const response = await fetch(endpoint, {
-          method: "POST",
-          body: JSON.stringify(newProduct),
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGFlNGI5OGNlYWY0ODAwMTVjOTE4ZDciLCJpYXQiOjE2MjIwMzY2MTMsImV4cCI6MTYyMzI0NjIxM30.UTCBinfwZqSkRA2yjhaVG7VYcl5qIqBRvWnTtErbg80"
-          },
-     
-        });
-
-        console.log("RESPONSE", response);
-        if (response.ok) {
-          const data = await response.json();
-          alert("Product created successfully with an id of " + data.id);
+      const isLoading = (loading) => {
+        // toggles the submit button loader on/off
+        if (loading) {
+          document.getElementById("spinner").classList.remove("d-none");
         } else {
-
-          if (response.status === 400) {
-            throw new Error("Bad request with status 400");
-          } else if (response.status === 401) {
-            throw new Error("Anauthorized with status 401");
-          } else if (response.status === 404) {
-            throw new Error("Not found with status 404");
-          }
+          document.getElementById("spinner").classList.add("d-none");
         }
-      } catch (err) {
-        alert(err.message);
-      }
+      };
 
+    
 
-}
 
 const handleDelete = async () => {
         // this function is fired from the delete button and will have the endpoint + eventId and a DELETE method for the API request
         try {
-          const response = await fetch(endpoint, { method: "DELETE" });
+          const response = await fetch(endpoint, { method: "DELETE",
+           headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGFlNGI5OGNlYWY0ODAwMTVjOTE4ZDciLCJpYXQiOjE2MjIwMzY2MTMsImV4cCI6MTYyMzI0NjIxM30.UTCBinfwZqSkRA2yjhaVG7VYcl5qIqBRvWnTtErbg80"
+            },
+          });
           if (response.ok) {
-            alert("Event deleted successfully");
-            window.location.assign("./index.html"); // redirects the user to the homepage since the record got deleted
+            alert("Product deleted successfully");
+            window.location.assign("./home.html"); // redirects the user to the homepage since the record got deleted
           } else {
             alert("something went wrong with the deletion process");
           }
