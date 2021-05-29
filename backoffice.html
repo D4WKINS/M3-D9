@@ -146,9 +146,7 @@ window.onload = async () =>{
           document.getElementById("subtitle").innerText = " — Create an Event";
         }
       };
-                // 'Content-Type': 'application/json',
-                // "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGFlNGI5OGNlYWY0ODAwMTVjOTE4ZDciLCJpYXQiOjE2MjIwMzY2MTMsImV4cCI6MTYyMzI0NjIxM30.UTCBinfwZqSkRA2yjhaVG7VYcl5qIqBRvWnTtErbg80"
-
+              
                 const populateFields = (obj = objModel) => {
         // using the object model as default parameter, in case of calling populateFields() without any parameter, to erase the fields
         document.getElementById("product-name").value = obj.name; // in case of empty parameter obj will become = objModel
